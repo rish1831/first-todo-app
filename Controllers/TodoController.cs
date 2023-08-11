@@ -15,7 +15,7 @@ namespace first_api_project.Controllers
 
         public TodoController(TodoContext context)
         {
-            _context = context;
+            _context = context; //automatically created context
         }
 
         [HttpGet]

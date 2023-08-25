@@ -1,77 +1,47 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using first_api_project.Data;
 using first_api_project.Models;
 
 namespace first_api_project.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class TodoController : ControllerBase
     {
-        private readonly TodoContext _context;
+        private readonly TodoRepository _todoRepository;
 
-        public TodoController(TodoContext context)
+        public TodoController()
         {
-            _context = context; //automatically created context
+            _todoRepository = new TodoRepository(); // Initialize with the default constructor or pass connection string
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<string>>> GetTodoItems()
+        public IActionResult GetTodoItems()
         {
-            var todoInfos = await _context.TodoInfo.ToListAsync();
-            return Ok(todoInfos);
+            var todoItems = _todoRepository.GetAllTodoItems();
+            return Ok(todoItems);
         }
 
         [HttpPost]
-        public async Task<ActionResult<TodoItem>> AddTodoItem(TodoItem todoItem)
+        public IActionResult AddTodoItem(TodoItem todoItem)
         {
-            todoItem.Id = Guid.NewGuid(); 
-
-            var todoInfos = await _context.TodoInfo.ToListAsync();
-              var existingItem = await _context.TodoInfo.FindAsync(todoItem.Id);
-    if (existingItem != null)
-    {
-        // If the item already exists, throw an exception
-        throw new InvalidOperationException("A TodoItem with the same ID already exists.");
-    }
- todoItem.TodoTimeAdded = DateTime.Now;
-
-            _context.TodoInfo.Add(todoItem);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetTodoItems), new { id = todoItem.Id }, todoItem);
+            _todoRepository.AddTodoItem(todoItem);
+            return Ok();
         }
-            [HttpPut("{id}")]
-public async Task<IActionResult> UpdateTodoItem(Guid id, [FromBody] TodoItem updatedTodoItem)
-{
-    var existingTodoItem = await _context.TodoInfo.FindAsync(id);
 
-    if (existingTodoItem == null)
-    {
-        return NotFound();
-    }
+        [HttpPut("{id}")]
+        public IActionResult UpdateTodoItem(Guid id, TodoItem todoItem)
+        {
+            todoItem.Id = id;
+            _todoRepository.UpdateTodoItem(todoItem);
+            return Ok();
+        }
 
-    existingTodoItem.Title = updatedTodoItem.Title;
-existingTodoItem.TodoModifiedTime=DateTime.Now;
-
-    _context.Entry(existingTodoItem).State = EntityState.Modified;
-
-    try
-    {
-        await _context.SaveChangesAsync();
-        return NoContent(); // Successful update
-    }
-    catch (DbUpdateConcurrencyException)
-    {
-        // Handle concurrency exceptions if needed
-        return StatusCode(500, "An error occurred while updating the record.");
+        [HttpDelete("{id}")]
+        public IActionResult DeleteTodoItem(Guid id)
+        {
+            _todoRepository.DeleteTodoItem(id);
+            return Ok();
+        }
     }
 }
-    }
-
-
-}
-
